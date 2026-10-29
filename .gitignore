@@ -1,42 +1,18 @@
-# ------------------------------------------------------------------
-# Credenciales locales (NUNCA subir al repositorio)
-# ------------------------------------------------------------------
-secrets.h
-**/secrets.h
-
-# ------------------------------------------------------------------
-# Compilación / Arduino
-# ------------------------------------------------------------------
+# ESP-IDF build artifacts
 build/
-*.bin
-*.elf
-*.map
-*.lst
-*.sym
-*.d
-*.o
-*.a
-*.hex
+sdkconfig
+sdkconfig.old
 
-# ------------------------------------------------------------------
-# Entornos de desarrollo
-# ------------------------------------------------------------------
+# Secrets (never commit credentials)
+main/secrets.h
+
+# IDE
 .vscode/
 .idea/
-*.code-workspace
-.pio/
-.pioenvs/
-.piolibdeps/
-platformio.ini.user
+*.swp
+*.swo
+*~
 
-# ------------------------------------------------------------------
-# Sistema operativo / temporales
-# ------------------------------------------------------------------
-Thumbs.db
-Desktop.ini
+# OS
 .DS_Store
-*.log
-*.tmp
-*.bak
-*.orig
-*.rej
+Thumbs.db
