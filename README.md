@@ -129,6 +129,55 @@ Los datos de sensores se comparten mediante un mutex (`xSensoresMutex`).
 - ⚠️ Control Bluetooth clásico (mando GameSir): stack BT inicializado como stub. La integración completa del gamepad requiere stack HID/SPP adicional sobre el componente `bt` de ESP-IDF v6.1.
 - ✅ Compilación verificada con ESP-IDF v6.1 (target `esp32`)
 
+## Pruebas por módulo
+
+Se incluye un menú de pruebas interactivo para validar cada módulo por separado:
+
+### Archivos de prueba
+- `main/test_menu.c` — Menú interactivo por serial (USB/UART0, 115200 baudios)
+- `main/app_main_test.c` — Punto de entrada para el menú de pruebas
+- `build_test.sh` — Cambia al menú de pruebas y compila
+- `build_firmware.sh` — Vuelve al firmware normal y compila
+
+### Cómo usar las pruebas
+
+```bash
+# 1. Activar entorno ESP-IDF
+source $HOME/.espressif/tools/activate_idf_v6.1.sh
+
+# 2. Cambiar al menú de pruebas y compilar
+./build_test.sh
+
+# 3. Flashear al ESP32
+idf.py flash
+
+# 4. Abrir el monitor para ver resultados y seleccionar pruebas
+idf.py monitor
+
+# 5. En el menú, elegir el módulo a probar:
+#    1 - DHT22 (GPIO 13)
+#    2 - Sensor Flama IR (GPIO 34)
+#    3 - Sensor MQ-135 (GPIO 35)
+#    4 - Ultrasonido HC-SR04 (TRIG 32 / ECHO 33)
+#    5 - Puente H L298N (motores)
+#    6 - Conectividad Wi-Fi
+#    7 - Bluetooth - Mando GameSir
+#    0 - Salir (reiniciar)
+
+# 6. Volver al firmware normal
+./build_firmware.sh
+```
+
+### Orden sugerido de pruebas
+
+1. **DHT22** — Verifica lectura de temperatura y humedad cada 2 s
+2. **Flama IR** — Verifica detección de llama/fuego (sensor en LOW = detectado)
+3. **MQ-135** — Verifica niveles de gas/humo (umbral: 2700 ADC)
+4. **HC-SR04** — Verifica distancia en 3 posiciones (izquierda/frente/derecha)
+5. **L298N** — Secuencia: adelante, atrás, izquierda, derecha, detener
+6. **Wi-Fi** — Verifica conexión a red y obtención de IP
+7. **Bluetooth** — Verifica emparejamiento con mando GameSir
+
 ## Notas de producción
 
 - Sin OTA, sin PSRAM, sin Secure Boot (configuración actual).

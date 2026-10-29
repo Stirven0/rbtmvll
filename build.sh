@@ -2,7 +2,7 @@
 # =============================================================================
 # build.sh - Script de construcción para IndoorWatch (ESP-IDF)
 # =============================================================================
-set -euo pipefail
+set -eo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${PROJECT_DIR}/build"

@@ -1,5 +1,7 @@
 idf_component_register(
     SRCS "app_main.c"
+         #"app_main_test.c"
+         "test_menu.c"
          "config.c"
          "sensores.c"
          "motores.c"
