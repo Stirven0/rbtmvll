@@ -7,16 +7,14 @@ Migración del firmware de Arduino IDE → ESP-IDF para **ESP32 original (esp32)
 | Componente | Pin ESP32 | Notas |
 |------------|-----------|-------|
 | DHT22 (temp/hum) | GPIO 13 | Bit-banging GPIO |
-| MQ-135 / MQ-2 gas | GPIO 34 | ADC1_CHANNEL_6, 12 bits, 11 dB |
-| Sensor flama IR | GPIO 35 | Entrada digital, LOW = fuego |
+| MQ-135 / MQ-2 gas | GPIO 35 | ADC1_CHANNEL_7, 12 bits, 11 dB |
+| Sensor flama IR | GPIO 34 | ADC1_CHANNEL_6, entrada digital, LOW = fuego |
 | Batería (divisor 20k/10k) | GPIO 36 | ADC1_CHANNEL_0 |
 | HC-SR04 TRIG | GPIO 32 | |
 | HC-SR04 ECHO | GPIO 33 | Divisor 1 kΩ / 2 kΩ |
-| Servo SG90 | GPIO 27 | LEDC PWM, 5 V externo |
-| L298N IN1..IN4 | GPIO 18, 19, 22, 23 | Velocidad fija (ENA/ENB jumper) |
-| L298N ENA/ENB | GPIO 25, 26 | Jumper puestos |
-| BT Serial HC-05/06 | UART2: RX=16, TX=17 | 9600 baudios |
-| OLED SSD1306 I2C | SDA=21, SCL=4 | 0x3C, 128×64 |
+| Servo SG90 | GPIO 26 | LEDC PWM, 5 V externo |
+| L298N IN1..IN4 | GPIO 18, 19, 22, 23 | Velocidad fija (ENA jumper) |
+| L298N ENB | — | No usado (jumper en placa) |
 | Mando Bluetooth clásico | BT clásico ESP32 | GameSir (stack BT clásico ESP-IDF, stub) |
 
 ## Estructura del proyecto (ESP-IDF)
@@ -35,14 +33,12 @@ rbtmvll/
 │   ├── config.h / config.c   # Pines, umbrales, constantes
 │   ├── sensores.*            # DHT22, MQ, flama (bit-banging + ADC)
 │   ├── motores.*             # L298N driver H
-│   ├── bluetooth_serial.*    # HC-05 por UART2
 │   ├── control_bt.*          # Mando Bluetooth clásico (stack BT ESP-IDF)
 │   ├── wifi_manager.*        # Wi-Fi STA + reconexión
-│   ├── telegram_bot.*        # Telegram Bot API (HTTP + cJSON)
+│   ├── telegram_bot.*        # Telegram Bot API (HTTP)
 │   ├── alertas.*             # Umbrales temp/gas/flama + Telegram
 │   ├── modo.*                # AUTO / MANUAL
-│   ├── comandos.*            # Parser de comandos serial (USB + BT)
-│   ├── oled.*                # SSD1306 por I2C master
+│   ├── comandos.*            # Parser de comandos serial (USB)
 │   ├── servo_ultrasonido.*   # SG90 + HC-SR04 (LEDC + GPIO)
 │   └── secrets.example.h     # Plantilla de credenciales
 ```
@@ -111,11 +107,9 @@ Cada módulo del loop original de Arduino se ejecuta como una tarea independient
 |-------|-----------|---------|
 | sensores | 5 | Lectura DHT22, MQ, flama cada 2.5 s |
 | motores | 6 | Control L298N (tick cada 10 ms) |
-| bt_serial | 5 | Comandos por UART2 (HC-05) |
 | control_bt | 5 | Mando Bluetooth clásico (stack BT) |
 | wifi_telegram | 5 | Wi-Fi + polling de Telegram |
 | alertas | 5 | Evaluación de umbrales + envío Telegram |
-| oled | 4 | Refresco pantalla SSD1306 cada 500 ms |
 | servo_sonar | 5 | Servo SG90 + ultrasonido HC-SR04 |
 | comandos_usb | 5 | Comandos por USB/UART0 |
 
@@ -124,16 +118,14 @@ Los datos de sensores se comparten mediante un mutex (`xSensoresMutex`).
 ## Estado de la migración
 
 - ✅ Estructura de proyecto ESP-IDF (CMake, particiones, sdkconfig)
-- ✅ Sensores: DHT22 (bit-banging), MQ (ADC1), flama (GPIO)
-- ✅ Motores: L298N control continuo/temporal/demo
-- ✅ Bluetooth serial: HC-05 por UART2
+- ✅ Sensores: DHT22 (bit-banging GPIO), MQ (ADC1 GPIO 35), flama (GPIO 34)
+- ✅ Motores: L298N control continuo/temporal/demo (ENB ignorado, jumper en placa)
 - ✅ Wi-Fi: STA + reconexión no bloqueante
-- ✅ Telegram: Bot API vía HTTP + cJSON
+- ✅ Telegram: Bot API vía HTTP
 - ✅ Alertas: temp/gas/flama con cooldown
 - ✅ Modos: AUTO / MANUAL
-- ✅ Comandos serial: parser para USB y BT
-- ✅ OLED: SSD1306 por I2C master
-- ✅ Servo + ultrasonido: SG90 (LEDC) + HC-SR04 (GPIO)
+- ✅ Comandos serial: parser USB/UART0
+- ✅ Servo + ultrasonido: SG90 (LEDC GPIO 26) + HC-SR04 (GPIO)
 - ⚠️ Control Bluetooth clásico (mando GameSir): stack BT inicializado como stub. La integración completa del gamepad requiere stack HID/SPP adicional sobre el componente `bt` de ESP-IDF v6.1.
 - ✅ Compilación verificada con ESP-IDF v6.1 (target `esp32`)
 

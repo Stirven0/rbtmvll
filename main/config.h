@@ -14,8 +14,8 @@
  *  Pines oficiales - Etapa 1 (ya cableados en protoboard)
  * ------------------------------------------------------------------------ */
 #define PIN_DHT22        13   /* DHT22 DATA, alimentado a 3.3 V       */
-#define PIN_MQ_ANALOG    34   /* MQ-2/MQ-135 AO, ADC1 (solo entrada)  */
-#define PIN_FLAMA        35   /* Flama IR DO, ADC1 (solo entrada)     */
+#define PIN_MQ_ANALOG    35   /* MQ-2/MQ-135 AO, ADC1 (solo entrada)  */
+#define PIN_FLAMA        34   /* Flama IR DO, ADC1 (solo entrada)     */
 #define PIN_BATERIA      36   /* Divisor 20k/10k, ADC1 (solo entrada) */
 
 #define PIN_HCSR04_TRIG  32   /* HC-SR04 TRIG                         */
@@ -26,17 +26,12 @@
 #define PIN_L298N_IN3    22
 #define PIN_L298N_IN4    23
 #define PIN_L298N_ENA    25   /* PWM opcional (jumper puesto)         */
-#define PIN_L298N_ENB    26   /* PWM opcional (jumper puesto)         */
+/* PIN_L298N_ENB no se usa: la placa L298N lleva jumper en ENB        */
 
 #define MOTOR_A_INVERTIDO    false
 #define MOTOR_B_INVERTIDO    false
 
-#define PIN_BT_RX        16   /* Módulo BT TX -> RX2 de la ESP32      */
-#define PIN_BT_TX        17   /* Módulo BT RX -> TX2 de la ESP32      */
-
-#define PIN_OLED_SDA     21   /* SSD1306 I2C                          */
-#define PIN_OLED_SCL     4
-#define PIN_SERVO        27   /* SG90 señal PWM                       */
+#define PIN_SERVO        26   /* SG90 señal PWM (GPIO 26)             */
 
 /* ------------------------------------------------------------------------
  *  Umbrales de alerta (calibrados en campo)
@@ -57,8 +52,6 @@
 #define DURACION_MOVIMIENTO_MANUAL_MS 1500UL
 #define DURACION_CONTROL_CONTINUO_MS  5000UL   /* Paro de seguridad            */
 #define MANDO_TIMEOUT_MS              500UL
-#define OLED_REFRESCO_MS              500UL
-#define OLED_TIEMPO_DATOS_MS          10000UL
 #define INTERVALO_TELEMETRIA_MS       30000UL
 #define COOLDOWN_OBSTACULO_MS         30000UL
 #define SERVO_ASENTADO_MS             350UL
@@ -82,18 +75,6 @@
 #define MANDO_EJE_X_INVERTIDO    false
 
 /* ------------------------------------------------------------------------
- *  Bluetooth serial (HC-05 / HC-06 / HM-10)
- * ------------------------------------------------------------------------ */
-#define BT_BAUDIOS          9600UL
-
-/* ------------------------------------------------------------------------
- *  Pantalla OLED SSD1306 (I2C)
- * ------------------------------------------------------------------------ */
-#define OLED_DIRECCION      0x3C
-#define OLED_ANCHO          128
-#define OLED_ALTO           64
-
-/* ------------------------------------------------------------------------
  *  Servo SG90 + HC-SR04
  * ------------------------------------------------------------------------ */
 #define SERVO_ANGULO_MIN    30
@@ -103,8 +84,8 @@
 /* ------------------------------------------------------------------------
  *  Canales ADC1 (ESP32)
  * ------------------------------------------------------------------------ */
-#define ADC_CHANNEL_MQ      ADC_CHANNEL_6   /* GPIO 34                    */
-#define ADC_CHANNEL_FLAMA   ADC_CHANNEL_7   /* GPIO 35                    */
+#define ADC_CHANNEL_MQ      ADC_CHANNEL_7   /* GPIO 35                    */
+#define ADC_CHANNEL_FLAMA   ADC_CHANNEL_6   /* GPIO 34                    */
 #define ADC_CHANNEL_BATERIA ADC_CHANNEL_0   /* GPIO 36                    */
 
 /* ------------------------------------------------------------------------
@@ -147,11 +128,6 @@ uint8_t config_pin_l298n_in2(void);
 uint8_t config_pin_l298n_in3(void);
 uint8_t config_pin_l298n_in4(void);
 uint8_t config_pin_l298n_ena(void);
-uint8_t config_pin_l298n_enb(void);
-uint8_t config_pin_bt_rx(void);
-uint8_t config_pin_bt_tx(void);
-uint8_t config_pin_oled_sda(void);
-uint8_t config_pin_oled_scl(void);
 uint8_t config_pin_servo(void);
 
 uint32_t config_intervalo_sensores_ms(void);

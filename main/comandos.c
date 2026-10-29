@@ -10,12 +10,11 @@
 static const char *TAG = "COMANDOS";
 
 #define UART_NUM_USB UART_NUM_0
-#define UART_NUM_BT  UART_NUM_2
 
 #define TAM_BUFFER 32
 #define TIEMPO_SILENCIO_MS 60  /* silencio para procesar letra sin Enter */
 
-/* Estado del parser por puerto */
+/* Estado del parser por puerto (solo USB/UART0) */
 typedef struct {
     uint8_t buffer[TAM_BUFFER];
     uint8_t longitud;
@@ -24,47 +23,45 @@ typedef struct {
 } parser_t;
 
 static parser_t parser_usb = { 0 };
-static parser_t parser_bt  = { 0 };
 
 static uint32_t ahora_ms(void)
 {
     return (uint32_t)(esp_timer_get_time() / 1000ULL);
 }
 
-static void imprimir_linea_uart(uart_port_t puerto, bool eco,
-                                const char *texto)
+static void imprimir_linea_serial(bool eco, const char *texto)
 {
-    if (eco && puerto == UART_NUM_BT) {
-        uart_write_bytes(puerto, texto, strlen(texto));
-        uart_write_bytes(puerto, "\r\n", 2);
+    if (eco) {
+        uart_write_bytes(UART_NUM_USB, texto, strlen(texto));
+        uart_write_bytes(UART_NUM_USB, "\r\n", 2);
     } else {
         ESP_LOGI(TAG, "%s", texto);
     }
 }
 
-static void imprimir_estado_uart(uart_port_t puerto, bool eco)
+static void imprimir_estado_serial(bool eco)
 {
     char estado[96];
     snprintf(estado, sizeof(estado),
              "Estado motores: %s | Mando: %s",
              motores_estado_texto(),
              control_bt_conectado() ? control_bt_nombre() : "desconectado");
-    imprimir_linea_uart(puerto, eco, estado);
+    imprimir_linea_serial(eco, estado);
 }
 
-static void imprimir_ayuda_uart(uart_port_t puerto, bool eco)
+static void imprimir_ayuda_serial(bool eco)
 {
-    imprimir_linea_uart(puerto, eco,
+    imprimir_linea_serial(eco,
         "Comandos: a=adelante r=atras i=izquierda d=derecha");
-    imprimir_linea_uart(puerto, eco,
+    imprimir_linea_serial(eco,
         "s=detener p=demo m=estado h=ayuda");
-    imprimir_linea_uart(puerto, eco,
+    imprimir_linea_serial(eco,
         "Mando: b=olvidar claves e=rebuscar x=debug");
-    imprimir_linea_uart(puerto, eco,
+    imprimir_linea_serial(eco,
         "a/r/i/d siguen hasta s o hasta 5 s sin una nueva orden.");
 }
 
-static void ejecutar_comando(const char *token, uart_port_t puerto, bool eco)
+static void ejecutar_comando(const char *token, bool eco)
 {
     if (token[0] == '\0') return;
 
@@ -73,46 +70,46 @@ static void ejecutar_comando(const char *token, uart_port_t puerto, bool eco)
         switch (c) {
         case 'a':
             motores_control_continuo(DIRECCION_ADELANTE);
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: adelante (s=detener)");
+            if (eco) imprimir_linea_serial(eco, "OK: adelante (s=detener)");
             return;
         case 'r':
             motores_control_continuo(DIRECCION_ATRAS);
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: atras (s=detener)");
+            if (eco) imprimir_linea_serial(eco, "OK: atras (s=detener)");
             return;
         case 'i':
             motores_control_continuo(DIRECCION_IZQUIERDA);
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: izquierda (s=detener)");
+            if (eco) imprimir_linea_serial(eco, "OK: izquierda (s=detener)");
             return;
         case 'd':
             motores_control_continuo(DIRECCION_DERECHA);
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: derecha (s=detener)");
+            if (eco) imprimir_linea_serial(eco, "OK: derecha (s=detener)");
             return;
         case 's':
             motores_detener();
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: detenido");
+            if (eco) imprimir_linea_serial(eco, "OK: detenido");
             return;
         case 'p':
             motores_demo();
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: demo iniciada");
+            if (eco) imprimir_linea_serial(eco, "OK: demo iniciada");
             return;
         case 'm':
-            imprimir_estado_uart(puerto, eco);
+            imprimir_estado_serial(eco);
             return;
         case 'b':
             control_bt_olvidar_claves();
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: claves del mando olvidadas");
+            if (eco) imprimir_linea_serial(eco, "OK: claves del mando olvidadas");
             return;
         case 'e':
             control_bt_reiniciar_busqueda();
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: busqueda del mando reiniciada");
+            if (eco) imprimir_linea_serial(eco, "OK: busqueda del mando reiniciada");
             return;
         case 'x':
             control_bt_alternar_debug();
-            if (eco) imprimir_linea_uart(puerto, eco, "OK: debug del mando alternado");
+            if (eco) imprimir_linea_serial(eco, "OK: debug del mando alternado");
             return;
         case 'h':
         case '?':
-            imprimir_ayuda_uart(puerto, eco);
+            imprimir_ayuda_serial(eco);
             return;
         default:
             return;
@@ -121,32 +118,31 @@ static void ejecutar_comando(const char *token, uart_port_t puerto, bool eco)
 
     if (strcmp(token, "adelante") == 0) {
         motores_control_continuo(DIRECCION_ADELANTE);
-        if (eco) imprimir_linea_uart(puerto, eco, "OK: adelante (s=detener)");
+        if (eco) imprimir_linea_serial(eco, "OK: adelante (s=detener)");
     } else if (strcmp(token, "atras") == 0) {
         motores_control_continuo(DIRECCION_ATRAS);
-        if (eco) imprimir_linea_uart(puerto, eco, "OK: atras (s=detener)");
+        if (eco) imprimir_linea_serial(eco, "OK: atras (s=detener)");
     } else if (strcmp(token, "izquierda") == 0) {
         motores_control_continuo(DIRECCION_IZQUIERDA);
-        if (eco) imprimir_linea_uart(puerto, eco, "OK: izquierda (s=detener)");
+        if (eco) imprimir_linea_serial(eco, "OK: izquierda (s=detener)");
     } else if (strcmp(token, "derecha") == 0) {
         motores_control_continuo(DIRECCION_DERECHA);
-        if (eco) imprimir_linea_uart(puerto, eco, "OK: derecha (s=detener)");
+        if (eco) imprimir_linea_serial(eco, "OK: derecha (s=detener)");
     } else if (strcmp(token, "detener") == 0 || strcmp(token, "stop") == 0) {
         motores_detener();
-        if (eco) imprimir_linea_uart(puerto, eco, "OK: detenido");
+        if (eco) imprimir_linea_serial(eco, "OK: detenido");
     } else if (strcmp(token, "demo") == 0) {
         motores_demo();
-        if (eco) imprimir_linea_uart(puerto, eco, "OK: demo iniciada");
+        if (eco) imprimir_linea_serial(eco, "OK: demo iniciada");
     } else if (strcmp(token, "estado") == 0) {
-        imprimir_estado_uart(puerto, eco);
+        imprimir_estado_serial(eco);
     } else if (strcmp(token, "ayuda") == 0) {
-        imprimir_ayuda_uart(puerto, eco);
+        imprimir_ayuda_serial(eco);
     }
     /* Cualquier otra cadena se ignora. */
 }
 
-static void procesar_buffer(parser_t *parser, uart_port_t puerto,
-                            bool eco, const char *origen)
+static void procesar_buffer(parser_t *parser, bool eco, const char *origen)
 {
     parser->buffer[parser->longitud] = '\0';
 
@@ -167,7 +163,7 @@ static void procesar_buffer(parser_t *parser, uart_port_t puerto,
     if (p[0] == '\0') return;
 
     ESP_LOGI(TAG, "[%s] Comando: %s", origen, p);
-    ejecutar_comando(p, puerto, eco);
+    ejecutar_comando(p, eco);
 }
 
 static void tick_parser(parser_t *parser, uart_port_t puerto,
@@ -181,7 +177,7 @@ static void tick_parser(parser_t *parser, uart_port_t puerto,
 
         if (c == '\r' || c == '\n') {
             if (!parser->descartar) {
-                procesar_buffer(parser, puerto, eco, origen);
+                procesar_buffer(parser, eco, origen);
             }
             parser->descartar = false;
             parser->longitud = 0;
@@ -210,24 +206,11 @@ static void tick_parser(parser_t *parser, uart_port_t puerto,
     /* Procesar letra sola tras silencio (sin Enter) */
     if (!parser->descartar && parser->longitud > 0 &&
         (ahora_ms() - parser->ultimo_char_ms >= TIEMPO_SILENCIO_MS)) {
-        procesar_buffer(parser, puerto, eco, origen);
+        procesar_buffer(parser, eco, origen);
     }
 }
 
 void comandos_procesar_serial(const char *origen)
 {
     tick_parser(&parser_usb, UART_NUM_USB, false, origen);
-}
-
-void comandos_procesar_uart2(const char *origen, bool eco)
-{
-    tick_parser(&parser_bt, UART_NUM_BT, eco, origen);
-}
-
-void comandos_reset_uart2(void)
-{
-    parser_bt.longitud = 0;
-    parser_bt.buffer[0] = '\0';
-    parser_bt.descartar = false;
-    parser_bt.ultimo_char_ms = 0;
 }

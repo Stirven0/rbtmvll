@@ -101,13 +101,14 @@ void motores_init(void)
     gpio_set_direction((gpio_num_t)PIN_L298N_IN3, GPIO_MODE_OUTPUT);
     gpio_set_direction((gpio_num_t)PIN_L298N_IN4, GPIO_MODE_OUTPUT);
 
-    /* ENA/ENB no se configuran: llevan jumpers (velocidad fija) */
+    /* ENA con jumper (velocidad fija). ENB no se usa: la placa tiene jumper. */
     aplicar_direccion(DIRECCION_DETENIDO);
 
-    ESP_LOGI(TAG, "L298N listo: IN1=%d IN2=%d IN3=%d IN4=%d. "
-                  "ENA/ENB con jumpers (velocidad fija).",
-             PIN_L298N_IN1, PIN_L298N_IN2, PIN_L298N_IN3, PIN_L298N_IN4);
-    ESP_LOGI(TAG, "USB/Bluetooth: a=adelante r=atras i=izquierda d=derecha "
+    ESP_LOGI(TAG, "L298N listo: IN1=%d IN2=%d IN3=%d IN4=%d ENA=%d "
+                  "(ENB con jumper en placa).",
+             PIN_L298N_IN1, PIN_L298N_IN2, PIN_L298N_IN3, PIN_L298N_IN4,
+             PIN_L298N_ENA);
+    ESP_LOGI(TAG, "USB: a=adelante r=atras i=izquierda d=derecha "
                   "s=detener p=demo");
 }
 

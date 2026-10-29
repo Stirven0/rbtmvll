@@ -2,7 +2,6 @@
 #include "config.h"
 #include "control_bt.h"
 #include "motores.h"
-#include "oled.h"
 #include "servo_ultrasonido.h"
 #include "telegram_bot.h"
 #include "wifi_manager.h"
@@ -34,7 +33,6 @@ static void aplicar_modo(modo_operacion_t nuevo, bool avisar_telegram)
     }
 
     modo = nuevo;
-    oled_mostrar_modo(modo);
 }
 
 void modo_init(void)

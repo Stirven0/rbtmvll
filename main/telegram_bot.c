@@ -4,7 +4,6 @@
 #include "wifi_manager.h"
 #include "motores.h"
 #include "control_bt.h"
-#include "bluetooth_serial.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "esp_timer.h"
@@ -200,14 +199,12 @@ static void reporte_estado(char *buffer, size_t tam,
                     "⏱️ Última lectura: hace %lu s\n"
                     "🚗 Motores: %s\n"
                     "🎮 Mando: %s\n"
-                    "📡 BT Serial: %s\n"
                     "📶 Wi-Fi: %d dBm\n"
                     "🕒 Uptime: %s\n",
                     lec->ultima_actualizacion_ms ?
                         (unsigned long)((uint32_t)(esp_timer_get_time()/1000ULL) - lec->ultima_actualizacion_ms) / 1000UL : 0,
                     motores_estado_texto(),
                     control_bt_conectado() ? control_bt_nombre() : "desconectado",
-                    bluetooth_serial_estado(),
                     wifi_rssi(), uptime);
 }
 
@@ -337,18 +334,6 @@ static void procesar_mensaje(const char *json_mensaje,
                 "🎮 Mando desconectado. Enciéndelo en modo Android (Home + A) "
                 "o Switch (Home + Y) y espera el parpadeo rápido.");
         }
-    } else if (strcmp(comando, "/bluetooth") == 0) {
-        const char *info =
-            "📡 *Bluetooth serial*\n\n"
-            "Módulo: HC-05 / HC-06 / HM-10 (UART).\n"
-            "Cableado: TX del módulo → GPIO16, RX → GPIO17, GND común.\n"
-            "Baudios: 9600.\n\n"
-            "1. Empareja el celular con el módulo (PIN 1234 o 0000).\n"
-            "2. Abre una app de terminal Bluetooth.\n"
-            "3. Envía una sola letra: a/r/i/d/s/p.\n\n"
-            "a=adelante, r=atrás, i=izquierda, d=derecha, "
-            "s=detener, p=demo, m=estado, h=ayuda.";
-        telegram_enviar_mensaje(info);
     } else if (strcmp(comando, "/motores") == 0 ||
                strcmp(comando, "/control") == 0) {
         enviar_ayuda_motores();

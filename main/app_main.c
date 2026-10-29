@@ -15,35 +15,29 @@
 #include "config.h"
 #include "sensores.h"
 #include "motores.h"
-#include "bluetooth_serial.h"
 #include "control_bt.h"
 #include "wifi_manager.h"
 #include "telegram_bot.h"
 #include "alertas.h"
 #include "modo.h"
 #include "comandos.h"
-#include "oled.h"
 #include "servo_ultrasonido.h"
 
 static const char *TAG = "APP_MAIN";
 
 #define TAILA_PILA_SENSORES     4096
 #define TAILA_PILA_MOTORES      3072
-#define TAILA_PILA_BT_SERIAL    3072
 #define TAILA_PILA_CONTROL_BT   4096
 #define TAILA_PILA_WIFI_TG      6144
 #define TAILA_PILA_ALERTAS      3072
-#define TAILA_PILA_OLED         3072
 #define TAILA_PILA_SERVO_SONAR  3072
 #define TAILA_PILA_COMANDOS_USB 3072
 
 #define PRIO_SENSORES           5
 #define PRIO_MOTORES            6
-#define PRIO_BT_SERIAL          5
 #define PRIO_CONTROL_BT         5
 #define PRIO_WIFI_TG            5
 #define PRIO_ALERTAS            5
-#define PRIO_OLED               4
 #define PRIO_SERVO_SONAR        5
 #define PRIO_COMANDOS_USB       5
 
@@ -85,17 +79,6 @@ static void tarea_motores(void *pvParameter)
     while (1) {
         motores_tick();
         vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-static void tarea_bluetooth_serial(void *pvParameter)
-{
-    ESP_LOGI(TAG, "Tarea bluetooth serial iniciada");
-    bluetooth_serial_init();
-
-    while (1) {
-        bluetooth_serial_tick();
-        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
@@ -146,22 +129,6 @@ static void tarea_alertas(void *pvParameter)
         }
 
         vTaskDelay(pdMS_TO_TICKS(500));
-    }
-}
-
-static void tarea_oled(void *pvParameter)
-{
-    ESP_LOGI(TAG, "Tarea OLED iniciada");
-    oled_init();
-
-    while (1) {
-        const lecturas_ambientales_t *lec = sensores_obtener_puntero();
-        if (lec && xSemaphoreTake(xSensoresMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
-            oled_tick(*lec);
-            xSemaphoreGive(xSensoresMutex);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -229,14 +196,12 @@ void app_main(void)
     /* Crear tareas FreeRTOS (una por módulo del loop original) */
     xTaskCreate(tarea_sensores,      "sensores",      TAILA_PILA_SENSORES,      NULL, PRIO_SENSORES,      NULL);
     xTaskCreate(tarea_motores,       "motores",       TAILA_PILA_MOTORES,       NULL, PRIO_MOTORES,       NULL);
-    xTaskCreate(tarea_bluetooth_serial, "bt_serial",  TAILA_PILA_BT_SERIAL,     NULL, PRIO_BT_SERIAL,     NULL);
     xTaskCreate(tarea_control_bt,    "control_bt",    TAILA_PILA_CONTROL_BT,    NULL, PRIO_CONTROL_BT,    NULL);
     xTaskCreate(tarea_wifi_telegram, "wifi_telegram", TAILA_PILA_WIFI_TG,       NULL, PRIO_WIFI_TG,       NULL);
     xTaskCreate(tarea_alertas,       "alertas",       TAILA_PILA_ALERTAS,       NULL, PRIO_ALERTAS,       NULL);
-    xTaskCreate(tarea_oled,          "oled",          TAILA_PILA_OLED,          NULL, PRIO_OLED,          NULL);
     xTaskCreate(tarea_servo_sonar,   "servo_sonar",   TAILA_PILA_SERVO_SONAR,   NULL, PRIO_SERVO_SONAR,   NULL);
     xTaskCreate(tarea_comandos_usb,  "comandos_usb",  TAILA_PILA_COMANDOS_USB,  NULL, PRIO_COMANDOS_USB,  NULL);
 
     ESP_LOGI(TAG, "Sistema listo. Todas las tareas iniciadas.");
-    ESP_LOGI(TAG, "Consola USB: 115200 baudios | Bluetooth serial: 9600 baudios");
+    ESP_LOGI(TAG, "Consola USB: 115200 baudios | Bluetooth clasico: mando GameSir");
 }
