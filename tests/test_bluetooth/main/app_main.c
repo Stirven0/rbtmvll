@@ -18,6 +18,7 @@
 #include "esp_log.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
+#include "esp_bt.h"
 
 static const char *TAG = "TEST_BT";
 
