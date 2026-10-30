@@ -22,11 +22,14 @@
 
 static const char *TAG = "TEST_BT";
 
+static bool bt_stack_inicializado = false;
+
 static void bt_init_stack(void)
 {
     esp_err_t ret;
 
     if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_ENABLED) {
+        bt_stack_inicializado = true;
         return;
     }
 
@@ -48,6 +51,7 @@ static void bt_init_stack(void)
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Fallo habilitando BT clásico: %s",
                  esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Verifica que BT clásico esté habilitado en sdkconfig/menuconfig");
         return;
     }
 
@@ -65,6 +69,7 @@ static void bt_init_stack(void)
         return;
     }
 
+    bt_stack_inicializado = true;
     ESP_LOGI(TAG, "Stack BT clásico inicializado.");
 }
 
@@ -78,6 +83,14 @@ void app_main(void)
     ESP_LOGI(TAG, "==============================================");
 
     bt_init_stack();
+
+    if (!bt_stack_inicializado) {
+        ESP_LOGE(TAG, "No se pudo inicializar el stack BT clásico.");
+        ESP_LOGE(TAG, "Revisa sdkconfig: CONFIG_BT_ENABLED=y, CONFIG_BT_CLASSIC_ENABLED=y");
+        while (1) {
+            vTaskDelay(pdMS_TO_TICKS(5000));
+        }
+    }
 
     /* Mostrar dirección Bluetooth local */
     const uint8_t *bd_addr = esp_bt_dev_get_address();
