@@ -7,22 +7,14 @@ set -eo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${PROJECT_DIR}"
 
-# Activar entorno ESP-IDF si no está cargado (evita bucle infinito con INDOORWATCH_IDF_ENV)
-if [[ -z "${INDOORWATCH_IDF_ENV:-}" ]] && ! command -v idf.py &>/dev/null; then
-    export INDOORWATCH_IDF_ENV=1
-    for idf_env in \
-        "$HOME/.espressif/tools/activate_idf_v6.1.sh" \
-        "$HOME/esp/esp-idf/export.sh" \
-        "$HOME/esp-idf/export.sh" \
-        "/opt/esp-idf/export.sh"; do
-        if [[ -f "$idf_env" ]]; then
-            echo "[ENV] Activando entorno ESP-IDF: $idf_env"
-            exec bash -c "source '$idf_env' && export INDOORWATCH_IDF_ENV=1 && exec '$0' '$@'"
-        fi
-    done
-    echo "ERROR: idf.py no está en el PATH y no se encontró el entorno ESP-IDF."
-    echo "       Active el entorno primero:"
-    echo "       source \$HOME/.espressif/tools/activate_idf_v6.1.sh"
+# Verificar que el entorno ESP-IDF esté cargado
+if ! command -v idf.py &>/dev/null; then
+    echo "ERROR: idf.py no está en el PATH."
+    echo ""
+    echo "  Active el entorno ESP-IDF primero:"
+    echo "    source \$HOME/.espressif/tools/activate_idf_v6.1.sh"
+    echo ""
+    echo "  Luego ejecute este script nuevamente."
     exit 1
 fi
 
