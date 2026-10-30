@@ -45,9 +45,7 @@ static uint32_t ahora_ms(void)
 static void aplicar_motor(uint8_t pin_avance, uint8_t pin_retroceso,
                           bool avance, bool invertido)
 {
-    if (invertido) {
-        avance = !avance;
-    }
+    (void)invertido;  /* false / false eliminados: los motores están cableados correctamente */
     gpio_set_level((gpio_num_t)pin_avance,   avance ? 1 : 0);
     gpio_set_level((gpio_num_t)pin_retroceso, avance ? 0 : 1);
 }
@@ -56,22 +54,22 @@ static void aplicar_direccion(direccion_movimiento_t direccion)
 {
     switch (direccion) {
     case DIRECCION_ADELANTE:
-        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, true,  MOTOR_A_INVERTIDO);
-        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, true,  MOTOR_B_INVERTIDO);
+        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, true,  false);
+        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, true,  false);
         break;
     case DIRECCION_ATRAS:
-        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, false, MOTOR_A_INVERTIDO);
-        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, false, MOTOR_B_INVERTIDO);
+        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, false, false);
+        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, false, false);
         break;
     case DIRECCION_IZQUIERDA:
         /* Giro sobre el centro: motor A atrás, motor B adelante */
-        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, false, MOTOR_A_INVERTIDO);
-        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, true,  MOTOR_B_INVERTIDO);
+        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, false, false);
+        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, true,  false);
         break;
     case DIRECCION_DERECHA:
         /* Giro sobre el centro: motor A adelante, motor B atrás */
-        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, true,  MOTOR_A_INVERTIDO);
-        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, false, MOTOR_B_INVERTIDO);
+        aplicar_motor(PIN_L298N_IN1, PIN_L298N_IN2, true,  false);
+        aplicar_motor(PIN_L298N_IN3, PIN_L298N_IN4, false, false);
         break;
     case DIRECCION_DETENIDO:
     default:

@@ -2,7 +2,6 @@
 #include "config.h"
 #include "control_bt.h"
 #include "motores.h"
-#include "servo_ultrasonido.h"
 #include "telegram_bot.h"
 #include "wifi_manager.h"
 #include "esp_log.h"
@@ -23,13 +22,11 @@ static void aplicar_modo(modo_operacion_t nuevo, bool avisar_telegram)
         }
         control_bt_activar();
         wifi_apagar();
-        servo_ultrasonido_centrar();
         ESP_LOGI(TAG, "MANUAL: Wi-Fi OFF | Bluetooth ON | B=datos, Y=auto.");
     } else {
         control_bt_desactivar();
         wifi_encender();
-        servo_ultrasonido_centrar();
-        ESP_LOGI(TAG, "AUTOMATICO: Wi-Fi ON | Bluetooth OFF | servo escaneando.");
+        ESP_LOGI(TAG, "AUTOMATICO: Wi-Fi ON | Bluetooth OFF");
     }
 
     modo = nuevo;

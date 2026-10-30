@@ -21,7 +21,6 @@
 #include "alertas.h"
 #include "modo.h"
 #include "comandos.h"
-#include "servo_ultrasonido.h"
 
 static const char *TAG = "APP_MAIN";
 
@@ -30,7 +29,6 @@ static const char *TAG = "APP_MAIN";
 #define TAILA_PILA_CONTROL_BT   4096
 #define TAILA_PILA_WIFI_TG      6144
 #define TAILA_PILA_ALERTAS      3072
-#define TAILA_PILA_SERVO_SONAR  3072
 #define TAILA_PILA_COMANDOS_USB 3072
 
 #define PRIO_SENSORES           5
@@ -38,7 +36,6 @@ static const char *TAG = "APP_MAIN";
 #define PRIO_CONTROL_BT         5
 #define PRIO_WIFI_TG            5
 #define PRIO_ALERTAS            5
-#define PRIO_SERVO_SONAR        5
 #define PRIO_COMANDOS_USB       5
 
 /* Mutex para proteger las lecturas de sensores compartidas entre tareas */
@@ -132,25 +129,6 @@ static void tarea_alertas(void *pvParameter)
     }
 }
 
-static void tarea_servo_sonar(void *pvParameter)
-{
-    ESP_LOGI(TAG, "Tarea servo/ultrasonido iniciada");
-    servo_ultrasonido_init();
-
-    bool escanear = true;  /* en modo AUTO escanea; en MANUAL se centra */
-    while (1) {
-        bool modo_auto = modo_es_automatico();
-        if (modo_auto != escanear) {
-            escanear = modo_auto;
-            if (!escanear) {
-                servo_ultrasonido_centrar();
-            }
-        }
-        servo_ultrasonido_tick(escanear);
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-}
-
 static void tarea_comandos_usb(void *pvParameter)
 {
     ESP_LOGI(TAG, "Tarea comandos USB iniciada");
@@ -199,7 +177,6 @@ void app_main(void)
     xTaskCreate(tarea_control_bt,    "control_bt",    TAILA_PILA_CONTROL_BT,    NULL, PRIO_CONTROL_BT,    NULL);
     xTaskCreate(tarea_wifi_telegram, "wifi_telegram", TAILA_PILA_WIFI_TG,       NULL, PRIO_WIFI_TG,       NULL);
     xTaskCreate(tarea_alertas,       "alertas",       TAILA_PILA_ALERTAS,       NULL, PRIO_ALERTAS,       NULL);
-    xTaskCreate(tarea_servo_sonar,   "servo_sonar",   TAILA_PILA_SERVO_SONAR,   NULL, PRIO_SERVO_SONAR,   NULL);
     xTaskCreate(tarea_comandos_usb,  "comandos_usb",  TAILA_PILA_COMANDOS_USB,  NULL, PRIO_COMANDOS_USB,  NULL);
 
     ESP_LOGI(TAG, "Sistema listo. Todas las tareas iniciadas.");
