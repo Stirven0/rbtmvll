@@ -5,11 +5,10 @@
 set -eo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUILD_DIR="${PROJECT_DIR}/build"
+cd "${PROJECT_DIR}"
 
-# Asegurarse de que el entorno ESP-IDF esté cargado
+# Activar entorno ESP-IDF si no está cargado
 if ! command -v idf.py &>/dev/null; then
-    # Intentar activar automáticamente entornos comunes de ESP-IDF
     for idf_env in \
         "$HOME/.espressif/tools/activate_idf_v6.1.sh" \
         "$HOME/esp/esp-idf/export.sh" \
@@ -26,15 +25,12 @@ fi
 
 if ! command -v idf.py &>/dev/null; then
     echo "ERROR: idf.py no está en el PATH."
-    echo "       Fuente el entorno ESP-IDF, por ejemplo:"
-    echo "       . \$HOME/.espressif/tools/activate_idf_v6.1.sh"
-    echo "       o: . \$HOME/esp/esp-idf/export.sh"
+    echo "       Active el entorno ESP-IDF primero:"
+    echo "       source \$HOME/.espressif/tools/activate_idf_v6.1.sh"
     exit 1
 fi
 
 ACTION="${1:-build}"
-
-cd "${PROJECT_DIR}"
 
 case "${ACTION}" in
     build)
@@ -69,8 +65,12 @@ case "${ACTION}" in
         echo "[SIZE] Analizando tamaño de binario..."
         idf.py size
         ;;
+    clean)
+        echo "[CLEAN] Limpiando archivos de compilación..."
+        idf.py clean
+        ;;
     *)
-        echo "Uso: $0 {build|fullclean|flash|monitor|flash-monitor|menuconfig|size}"
+        echo "Uso: $0 {build|fullclean|flash|monitor|flash-monitor|menuconfig|size|clean}"
         exit 1
         ;;
 esac
