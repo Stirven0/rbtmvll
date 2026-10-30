@@ -129,54 +129,64 @@ Los datos de sensores se comparten mediante un mutex (`xSensoresMutex`).
 - ⚠️ Control Bluetooth clásico (mando GameSir): stack BT inicializado como stub. La integración completa del gamepad requiere stack HID/SPP adicional sobre el componente `bt` de ESP-IDF v6.1.
 - ✅ Compilación verificada con ESP-IDF v6.1 (target `esp32`)
 
-## Pruebas por módulo
+## Pruebas por módulo (sub-proyectos independientes)
 
-Se incluye un menú de pruebas interactivo para validar cada módulo por separado:
+Cada módulo se puede probar de forma independiente como un sub-proyecto ESP-IDF separado bajo `tests/`. Cada sub-proyecto tiene su propio `CMakeLists.txt` y se compila y flashea por separado.
 
-### Archivos de prueba
-- `main/test_menu.c` — Menú interactivo por serial (USB/UART0, 115200 baudios)
-- `main/app_main_test.c` — Punto de entrada para el menú de pruebas
-- `build_test.sh` — Cambia al menú de pruebas y compila
-- `build_firmware.sh` — Vuelve al firmware normal y compila
+### Estructura
 
-### Cómo usar las pruebas
+```
+tests/
+├── test_dht22/        # DHT22 - GPIO 13 (temp/hum)
+├── test_flama/        # Sensor Flama IR - GPIO 34
+├── test_mq/           # MQ-135 - GPIO 35 (gas/humo)
+├── test_ultrasonido/  # HC-SR04 + Servo SG90 (TRIG 32, ECHO 33, Servo 26)
+├── test_l298n/        # Puente H L298N - IN: 18,19,22,23 / ENA: 25
+├── test_wifi/         # Conectividad Wi-Fi STA
+└── test_bluetooth/    # Bluetooth Clásico - Mando GameSir
+```
+
+### Cómo ejecutar cada prueba
 
 ```bash
 # 1. Activar entorno ESP-IDF
 source $HOME/.espressif/tools/activate_idf_v6.1.sh
 
-# 2. Cambiar al menú de pruebas y compilar
-./build_test.sh
+# 2. Entrar al directorio del test deseado
+cd tests/test_dht22
 
-# 3. Flashear al ESP32
+# 3. Compilar
+idf.py build
+
+# 4. Flashear (te pedirá el puerto serial, ej. /dev/ttyUSB0)
 idf.py flash
 
-# 4. Abrir el monitor para ver resultados y seleccionar pruebas
+# 5. Ver resultados por serial
 idf.py monitor
 
-# 5. En el menú, elegir el módulo a probar:
-#    1 - DHT22 (GPIO 13)
-#    2 - Sensor Flama IR (GPIO 34)
-#    3 - Sensor MQ-135 (GPIO 35)
-#    4 - Ultrasonido HC-SR04 (TRIG 32 / ECHO 33)
-#    5 - Puente H L298N (motores)
-#    6 - Conectividad Wi-Fi
-#    7 - Bluetooth - Mando GameSir
-#    0 - Salir (reiniciar)
-
-# 6. Volver al firmware normal
-./build_firmware.sh
+# 6. Volver al directorio raíz cuando termines
+cd ../..
 ```
 
 ### Orden sugerido de pruebas
 
-1. **DHT22** — Verifica lectura de temperatura y humedad cada 2 s
-2. **Flama IR** — Verifica detección de llama/fuego (sensor en LOW = detectado)
-3. **MQ-135** — Verifica niveles de gas/humo (umbral: 2700 ADC)
-4. **HC-SR04** — Verifica distancia en 3 posiciones (izquierda/frente/derecha)
-5. **L298N** — Secuencia: adelante, atrás, izquierda, derecha, detener
-6. **Wi-Fi** — Verifica conexión a red y obtención de IP
-7. **Bluetooth** — Verifica emparejamiento con mando GameSir
+| # | Test | Módulo | Pines | Qué verifica |
+|---|------|--------|-------|--------------|
+| 1 | `test_dht22` | DHT22 | GPIO 13 | Temperatura y humedad cada 2 s |
+| 2 | `test_flama` | Flama IR | GPIO 34 | Detección de fuego (LOW = detectado) |
+| 3 | `test_mq` | MQ-135 | GPIO 35 | Niveles de gas cada 1 s (umbral 2700 ADC) |
+| 4 | `test_ultrasonido` | HC-SR04 + Servo | TRIG 32, ECHO 33, Servo 26 | Distancia 3 posiciones cada ~600 ms |
+| 5 | `test_l298n` | L298N Motores | IN: 18,19,22,23 / ENA: 25 | Secuencia: adelante, atrás, izq, der, detener |
+| 6 | `test_wifi` | Wi-Fi | — | Conexión a red y obtención de IP |
+| 7 | `test_bluetooth` | BT Clásico | ESP32 BT | Emparejamiento con mando GameSir |
+
+### Notas específicas
+
+**test_wifi:** Antes de compilar, edita `tests/test_wifi/main/app_main.c` y coloca tu SSID y contraseña Wi-Fi reales en `WIFI_SSID` y `WIFI_PASSWORD`.
+
+**test_bluetooth:** Inicializa el stack BT clásico de ESP-IDF y muestra la dirección BD local. Espera conexión de mando GameSir.
+
+**test_ultrasonido:** El servo barrerá entre izquierda (30°), frente (90°) y derecha (150°), midiendo distancia en cada posición.
 
 ## Notas de producción
 
