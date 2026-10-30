@@ -24,8 +24,8 @@
 
 static const char *TAG = "TEST_WIFI";
 
-#define WIFI_SSID     "TU_SSID_2G"
-#define WIFI_PASSWORD "TU_PASSWORD_WIFI"
+#define WIFI_SSID     "HONOR"
+#define WIFI_PASSWORD "12345678"
 
 static esp_netif_t *netif_sta = NULL;
 
@@ -83,7 +83,7 @@ void app_main(void)
     };
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "Esperando conexión Wi-Fi...");
