@@ -8,14 +8,15 @@ Migración del firmware de Arduino IDE → ESP-IDF para **ESP32 original (esp32)
 |------------|-----------|-------|
 | DHT22 (temp/hum) | GPIO 13 | Bit-banging GPIO |
 | MQ-135 / MQ-2 gas | GPIO 35 | ADC1_CHANNEL_7, 12 bits, 11 dB |
-| Sensor flama IR | GPIO 34 | ADC1_CHANNEL_6, entrada digital, LOW = fuego |
-| Batería (divisor 20k/10k) | GPIO 36 | ADC1_CHANNEL_0 |
-| HC-SR04 TRIG | GPIO 32 | |
+| Sensor flama IR | GPIO 34 | ADC1_CHANNEL_6, analógico (umbral calibrable) |
+| HC-SR04 TRIG | GPIO 32 | Ultrasonido |
 | HC-SR04 ECHO | GPIO 33 | Divisor 1 kΩ / 2 kΩ |
-| Servo SG90 | GPIO 26 | LEDC PWM, 5 V externo |
-| L298N IN1..IN4 | GPIO 18, 19, 22, 23 | Velocidad fija (ENA jumper) |
+| L298N IN1..IN4 | GPIO 18, 19, 22, 23 | Driver H, velocidad fija (ENA jumper) |
+| L298N ENA | GPIO 25 | Con jumper (velocidad fija) |
 | L298N ENB | — | No usado (jumper en placa) |
 | Mando Bluetooth clásico | BT clásico ESP32 | GameSir (stack BT clásico ESP-IDF, stub) |
+
+**No se usa:** Servo SG90, monitoreo de batería (GPIO 36), OLED SSD1306, Bluetooth serial HC-05.
 
 ## Estructura del proyecto (ESP-IDF)
 
@@ -118,14 +119,14 @@ Los datos de sensores se comparten mediante un mutex (`xSensoresMutex`).
 ## Estado de la migración
 
 - ✅ Estructura de proyecto ESP-IDF (CMake, particiones, sdkconfig)
-- ✅ Sensores: DHT22 (bit-banging GPIO), MQ (ADC1 GPIO 35), flama (GPIO 34)
+- ✅ Sensores: DHT22 (bit-banging GPIO), MQ (ADC1 GPIO 35), flama (ADC1 GPIO 34)
 - ✅ Motores: L298N control continuo/temporal/demo (ENB ignorado, jumper en placa)
 - ✅ Wi-Fi: STA + reconexión no bloqueante
 - ✅ Telegram: Bot API vía HTTP
 - ✅ Alertas: temp/gas/flama con cooldown
 - ✅ Modos: AUTO / MANUAL
 - ✅ Comandos serial: parser USB/UART0
-- ✅ Servo + ultrasonido: SG90 (LEDC GPIO 26) + HC-SR04 (GPIO)
+- ✅ Ultrasonido: HC-SR04 (GPIO 32/33)
 - ⚠️ Control Bluetooth clásico (mando GameSir): stack BT inicializado como stub. La integración completa del gamepad requiere stack HID/SPP adicional sobre el componente `bt` de ESP-IDF v6.1.
 - ✅ Compilación verificada con ESP-IDF v6.1 (target `esp32`)
 
@@ -140,7 +141,7 @@ tests/
 ├── test_dht22/        # DHT22 - GPIO 13 (temp/hum)
 ├── test_flama/        # Sensor Flama IR - GPIO 34
 ├── test_mq/           # MQ-135 - GPIO 35 (gas/humo)
-├── test_ultrasonido/  # HC-SR04 + Servo SG90 (TRIG 32, ECHO 33, Servo 26)
+├── test_ultrasonido/  # HC-SR04 (TRIG 32, ECHO 33)
 ├── test_l298n/        # Puente H L298N - IN: 18,19,22,23 / ENA: 25
 ├── test_wifi/         # Conectividad Wi-Fi STA
 └── test_bluetooth/    # Bluetooth Clásico - Mando GameSir
@@ -175,7 +176,7 @@ cd ../..
 | 1 | `test_dht22` | DHT22 | GPIO 13 | Temperatura y humedad cada 2 s |
 | 2 | `test_flama` | Flama IR | GPIO 34 | Detección de fuego (LOW = detectado) |
 | 3 | `test_mq` | MQ-135 | GPIO 35 | Niveles de gas cada 1 s (umbral 2700 ADC) |
-| 4 | `test_ultrasonido` | HC-SR04 + Servo | TRIG 32, ECHO 33, Servo 26 | Distancia 3 posiciones cada ~600 ms |
+| 4 | `test_ultrasonido` | HC-SR04 | TRIG 32, ECHO 33 | Distancia cada ~500 ms |
 | 5 | `test_l298n` | L298N Motores | IN: 18,19,22,23 / ENA: 25 | Secuencia: adelante, atrás, izq, der, detener |
 | 6 | `test_wifi` | Wi-Fi | — | Conexión a red y obtención de IP |
 | 7 | `test_bluetooth` | BT Clásico | ESP32 BT | Emparejamiento con mando GameSir |
@@ -186,7 +187,7 @@ cd ../..
 
 **test_bluetooth:** Inicializa el stack BT clásico de ESP-IDF y muestra la dirección BD local. Espera conexión de mando GameSir.
 
-**test_ultrasonido:** El servo barrerá entre izquierda (30°), frente (90°) y derecha (150°), midiendo distancia en cada posición.
+**test_ultrasonido:** Mide distancia cada 500 ms mediante el pulso TRIG y la lectura del eco en ECHO.
 
 ## Notas de producción
 

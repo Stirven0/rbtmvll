@@ -13,7 +13,7 @@ static const char *TAG = "SENSORES";
 static lecturas_ambientales_t lecturas = { 0 };
 static uint32_t ultima_lectura_ms = 0;
 
-/* Handle del ADC oneshot para el canal MQ */
+/* Handle del ADC oneshot (ADC_UNIT_1 para MQ y flama) */
 static adc_oneshot_unit_handle_t adc_handle = NULL;
 
 /* ------------------------------------------------------------------------
@@ -80,25 +80,20 @@ static bool dht22_leer(gpio_num_t pin, float *temperatura, float *humedad)
     return true;
 }
 
-static int leer_gas_promediado(int *crudo)
+static int leer_adc_promediado(adc_channel_t canal, uint8_t muestras)
 {
     long suma = 0;
-    for (uint8_t i = 0; i < MUESTRAS_GAS; ++i) {
+    for (uint8_t i = 0; i < muestras; ++i) {
         int raw = 0;
-        adc_oneshot_read(adc_handle, (adc_channel_t)ADC_CHANNEL_MQ, &raw);
-        *crudo = raw;
+        adc_oneshot_read(adc_handle, canal, &raw);
         suma += raw;
     }
-    return (int)(suma / MUESTRAS_GAS);
+    return (int)(suma / muestras);
 }
 
 void sensores_init(void)
 {
-    /* Flama: entrada digital */
-    gpio_set_direction((gpio_num_t)PIN_FLAMA, GPIO_MODE_INPUT);
-    gpio_set_pull_mode((gpio_num_t)PIN_FLAMA, GPIO_FLOATING);
-
-    /* ADC oneshot: 12 bits, atenuación 11 dB (rango ~0-3.3V) */
+    /* ADC oneshot: 12 bits, atenuación 11 dB (rango ~0-3.3V) para MQ y flama */
     adc_oneshot_unit_init_cfg_t init_cfg = {
         .unit_id = ADC_UNIT_1,
     };
@@ -106,15 +101,18 @@ void sensores_init(void)
 
     adc_oneshot_chan_cfg_t chan_cfg = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
+        .atten = ADC_ATTEN_DB_11,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle,
                                                 (adc_channel_t)ADC_CHANNEL_MQ,
                                                 &chan_cfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle,
+                                                (adc_channel_t)ADC_CHANNEL_FLAMA,
+                                                &chan_cfg));
 
     ultima_lectura_ms = 0;  /* primera lectura tras INTERVALO_SENSORES_MS */
 
-    ESP_LOGI(TAG, "DHT22=GPIO%d, MQ=GPIO%d, FLAMA=GPIO%d",
+    ESP_LOGI(TAG, "DHT22=GPIO%d, MQ=GPIO%d, FLAMA=GPIO%d (ADC)",
              PIN_DHT22, PIN_MQ_ANALOG, PIN_FLAMA);
 }
 
@@ -125,13 +123,17 @@ bool sensores_tick(void)
         ahora - ultima_lectura_ms >= INTERVALO_SENSORES_MS) {
         ultima_lectura_ms = ahora;
 
-        int crudo = 0;
-        lecturas.gas_adc = leer_gas_promediado(&crudo);
-        lecturas.gas_adc_crudo = crudo;
+        /* MQ: promedio de varias muestras */
+        lecturas.gas_adc = leer_adc_promediado((adc_channel_t)ADC_CHANNEL_MQ,
+                                                MUESTRAS_GAS);
+        lecturas.gas_adc_crudo = lecturas.gas_adc;
 
-        /* Flama: digital read (LOW = fuego detectado por LM393) */
-        lecturas.flama_detectada =
-            (gpio_get_level((gpio_num_t)PIN_FLAMA) == FLAMA_NIVEL_ACTIVO);
+        /* Flama: lectura analógica por ADC */
+        lecturas.flama_adc = leer_adc_promediado((adc_channel_t)ADC_CHANNEL_FLAMA,
+                                                  MUESTRAS_FLAMA);
+        /* Nota: según el sensor de flama, ajusta el sentido de la comparación.
+         * Aquí asumimos que lectura alta = flama detectada. */
+        lecturas.flama_detectada = (lecturas.flama_adc > UMBRAL_FLAMA_ADC);
 
         /* DHT22 */
         float t = 0.0f, h = 0.0f;
