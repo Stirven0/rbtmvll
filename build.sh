@@ -7,26 +7,14 @@ set -eo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${PROJECT_DIR}"
 
-# Activar entorno ESP-IDF si no está cargado
-if ! command -v idf.py &>/dev/null; then
-    for idf_env in \
-        "$HOME/.espressif/tools/activate_idf_v6.1.sh" \
-        "$HOME/esp/esp-idf/export.sh" \
-        "$HOME/esp-idf/export.sh" \
-        "/opt/esp-idf/export.sh"; do
-        if [[ -f "$idf_env" ]]; then
-            echo "[ENV] Activando entorno ESP-IDF: $idf_env"
-            # shellcheck source=/dev/null
-            source "$idf_env"
-            break
-        fi
-    done
-fi
-
+# Verificar que el entorno ESP-IDF esté cargado
 if ! command -v idf.py &>/dev/null; then
     echo "ERROR: idf.py no está en el PATH."
-    echo "       Active el entorno ESP-IDF primero:"
-    echo "       source \$HOME/.espressif/tools/activate_idf_v6.1.sh"
+    echo ""
+    echo "  Active el entorno ESP-IDF primero:"
+    echo "    source \$HOME/.espressif/tools/activate_idf_v6.1.sh"
+    echo ""
+    echo "  Luego ejecute este script nuevamente."
     exit 1
 fi
 
